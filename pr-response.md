@@ -13,10 +13,16 @@ Responses to the six review comments left by `@jamjamgobambam` on
 
 **Response:**
 Renamed `save_to_watchlist()` to `add_to_watchlist()` in `services/watchlist_service.py`
-and updated the one call site in `routes/watchlist/watchlist.py` to match the
-project's `verb_to_noun` convention (`add_to_collection`, `remove_from_collection`).
+to match the project's `verb_to_noun` convention (`add_to_collection`,
+`remove_from_collection`). Used VS Code's "Rename Symbol" (F2) so the editor's
+language server would update every reference automatically rather than relying
+on manual find-and-replace. Confirmed no call sites were missed by running
+`grep -rn "save_to_watchlist" .` afterward — the only remaining hits were the
+quoted comment text in this doc, not live code. The one real call site was
+`routes/watchlist/watchlist.py` (the import and the call inside `add_film()`),
+and both updated correctly.
 
-**Commit:** _TODO — commit this as `refactor: rename save_to_watchlist to add_to_watchlist`_
+**Commit:** `refactor: rename save_to_watchlist to add_to_watchlist`
 
 ---
 
@@ -27,9 +33,23 @@ project's `verb_to_noun` convention (`add_to_collection`, `remove_from_collectio
 > handle this case.
 
 **Response:**
-_TODO — fill in after making the change._
+Modeled this on `add_to_collection()` in `services/collection_service.py`, which
+queries for an existing `CollectionEntry` with the same `(user_id, film_id)`
+before inserting, and raises `AlreadyInCollectionError` if one is found. Added
+the watchlist equivalent: a new `AlreadyInWatchlistError` exception, and a
+`WatchlistEntry.query.filter_by(user_id=user_id, film_id=film_id).first()`
+check in `add_to_watchlist()` before creating the entry. If a match exists,
+`add_to_watchlist()` now raises `AlreadyInWatchlistError` instead of silently
+inserting a second row.
 
-**Commit:** _TODO_
+Verified manually first with `python -c "from services.watchlist_service import
+add_to_watchlist, get_watchlist, AlreadyInWatchlistError"` to confirm the module
+imports cleanly, and confirmed the existing suite (`test_collection.py`) still
+passes with no regressions. Full behavioral verification comes from the
+dedicated test in Comment 3 (`test_add_to_watchlist_duplicate_raises`), modeled
+on `test_add_to_collection_duplicate_raises` in `test_collection.py`.
+
+**Commit:** _TODO — commit as `fix: reject duplicate watchlist entries`_
 
 ---
 
