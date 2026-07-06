@@ -89,9 +89,21 @@ _TODO — your call: keep `public=True`, flip to `public=False`, or something el
 > is there.
 
 **Response:**
-_TODO — fill in after adding the test._
+Created `tests/test_watchlist.py`, mirroring `tests/test_collection.py`'s fixtures
+(`app`, `sample_user`, `sample_film`) and its three-test pattern from
+`CONTRIBUTING.md` (happy path, duplicate/conflict, nonexistent ID). Used
+`test_add_to_collection_nonexistent_film_raises` as the direct model for
+`test_add_to_watchlist_nonexistent_film_raises` — same fake UUID
+(`00000000-0000-0000-0000-000000000000`), same `pytest.raises(...)` structure,
+swapped `FilmNotFoundError`'s source import from `collection_service`. Also
+added `test_add_to_watchlist_creates_entry` (happy path) and
+`test_add_to_watchlist_duplicate_raises` (verifies Comment 2's fix), so the
+watchlist service now has the same three-test coverage as the collection service.
 
-**Commit:** _TODO_
+Ran `pytest tests/test_watchlist.py -v` — all 3 pass. Ran the full suite,
+`pytest tests/ -v` — all 7 pass, confirming no regressions to `test_collection.py`.
+
+**Commit:** _TODO — commit as `test: add watchlist tests for duplicate and nonexistent film cases`_
 
 ---
 
