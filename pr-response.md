@@ -61,9 +61,40 @@ on `test_add_to_collection_duplicate_raises` in `test_collection.py`.
 > document it.
 
 **Decision:**
-_TODO — your call: keep alphabetical, switch to date-added, or something else? Say why._
+Agreed with the maintainer — switched to date-added, newest first
+(`WatchlistEntry.date_added.desc()`), matching the pattern `get_collection()`
+already uses for the collection feature.
 
-**Commit:** _TODO_
+The reasoning goes further than "most users want recency," though. This app
+currently has no `remove_from_watchlist()` — nothing ever gets pruned from a
+watchlist, only added. That makes alphabetical order actively worse over time:
+as a list grows, new additions get buried alphabetically among everything
+you've ever added, with no way to distinguish "I just decided I want this" from
+"I added this eight months ago and forgot about it." Newest-first keeps the top
+of the list meaningful regardless of how large the list grows, since the
+most-recently-added film is also, almost by definition, one you haven't
+watched yet — if you had, you wouldn't still need it on the watchlist.
+
+Alphabetical does have a real use case — scanning/searching a large list for a
+specific title — but that's a "browse mode," not the default view. A future
+enhancement could let users toggle to alphabetical or oldest-first as an
+option, but newest-first should remain the default.
+
+Wrote `test_get_watchlist_returns_newest_first` in `tests/test_watchlist.py`
+(mirroring `test_get_collection_returns_newest_first`) to verify the new order.
+Running it surfaced an unrelated pre-existing bug: `Film` only declared a
+relationship back to `CollectionEntry` (`backref="film"`), never to
+`WatchlistEntry`, so `entry.film` inside `get_watchlist()` had never actually
+worked — it just went unnoticed because no test had ever called
+`get_watchlist()` before. Fixed by adding the missing
+`watchlist_entries = db.relationship("WatchlistEntry", backref="film", lazy=True)`
+to `Film` in `models.py`, mirroring the existing `collection_entries` line.
+Ran `pytest tests/ -v` afterward — all 8 pass.
+
+**Commits:**
+
+- `fix: add missing Film-to-WatchlistEntry relationship`
+- `fix: sort watchlist by date added instead of alphabetical`
 
 ---
 
