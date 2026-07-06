@@ -76,9 +76,40 @@ _TODO — your call: keep alphabetical, switch to date-added, or something else?
 > default.
 
 **Decision:**
-_TODO — your call: keep `public=True`, flip to `public=False`, or something else? Say why._
+Keeping `public=True` as the default.
 
-**Commit:** _TODO_
+CineLog's value proposition is social discovery: people use a watchlist app to
+share what they want to watch and find new films through friends with similar
+taste. If a film is on your public watchlist and a friend with overlapping
+interests sees it, that's a real discovery path — arguably the main reason to
+build a "list" feature at all instead of just personal notes. Defaulting to
+`public=True` optimizes for that behavior happening automatically, without
+requiring users to take an extra opt-in step that most of them would skip
+(defaults are sticky — most users never change them).
+
+The tradeoff we're accepting: some users will self-censor. If everything you
+add is visible by default, you may not add a film you're embarrassed about
+wanting to watch, which shrinks the pool of what actually gets logged. That's
+a real cost — it's not free to pick `True`.
+
+We're accepting that cost for now because:
+
+1. Right now `public` is inert — no route or service function in this
+   codebase actually filters or shares watchlist entries based on it. There's
+   no "friends" feature yet, so the immediate downside is close to zero;
+   we're setting a default in anticipation of a feature, not for one that
+   exists today.
+2. It's a reversible decision per-user going forward, not a one-way door: a
+   natural next step is letting users flip individual entries to private, so
+   people with something to hide can opt out instead of everyone having to
+   opt in.
+3. Public-by-default also means we have more watchlist data to build
+   recommendations from later (e.g., "users who added X also added Y").
+   Defaulting to private would mean most watchlists stay empty of signal
+   until users deliberately opt in, which is a much smaller dataset to build
+   suggestion features on top of.
+
+**Commit:** _TODO — this is a docs-only change (PR description / pr-response.md), no code change needed since `public=True` was already the model's default._
 
 ---
 
