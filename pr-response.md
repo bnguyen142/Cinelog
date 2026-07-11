@@ -17,8 +17,6 @@ AI was used to build understanding and catch mistakes — not to write code or g
 
 ---
 
----
-
 ## 1. Naming convention (`save_to_watchlist` → `add_to_watchlist`)
 
 > `save_to_watchlist()` should follow the project's naming convention. Compare
@@ -139,11 +137,7 @@ a real cost — it's not free to pick `True`.
 
 We're accepting that cost for now because:
 
-1. Right now `public` is inert — no route or service function in this
-   codebase actually filters or shares watchlist entries based on it. There's
-   no "friends" feature yet, so the immediate downside is close to zero;
-   we're setting a default in anticipation of a feature, not for one that
-   exists today.
+1. While callers can now set `public=False` explicitly via the visibility toggle, the field is still inert in terms of filtering or sharing — no route surfaces watchlist entries to other users yet. The default optimizes for the social feature when it does land, without forcing users to opt in retroactively.
 2. It's a reversible decision per-user going forward, not a one-way door: a
    natural next step is letting users flip individual entries to private, so
    people with something to hide can opt out instead of everyone having to
@@ -242,7 +236,14 @@ Adds a watchlist to CineLog so users can save films they want to watch in the fu
      -H "Content-Type: application/json" \
      -d '{"film_id": "<film_uuid>", "public": false}'
    ```
-7. Run the test suite: `pytest tests/ -v` — all 8 tests should pass
+7. Test removing a film from the watchlist:
+   ```bash
+   curl -X DELETE http://127.0.0.1:5000/watchlist/<user_id>/remove \
+     -H "Content-Type: application/json" \
+     -d '{"film_id": "<film_uuid>"}'
+   ```
+   Expect: `200` with a confirmation message. Removing again should return `404`.
+8. Run the test suite: `pytest tests/ -v` — all 11 tests should pass
 
 ---
 
