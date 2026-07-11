@@ -179,3 +179,11 @@ Ran `pytest tests/test_watchlist.py -v` — all 3 pass. Ran the full suite,
 _TODO — fill in after rebasing._
 
 **Commit:** _TODO_
+
+---
+
+## Additional Fix (not a review comment)
+
+While addressing the review comments, a bug was found in `routes/watchlist/watchlist.py`: the `add_film()` endpoint imported `FilmNotFoundError` but never wrapped the `add_to_watchlist()` call in a `try/except`. This meant a duplicate add would raise `AlreadyInWatchlistError` with no handler, returning a 500 instead of a 409.
+
+Fixed by wrapping the call in a `try/except` block mirroring the pattern in `routes/collection.py`, catching both `FilmNotFoundError` (404) and `AlreadyInWatchlistError` (409).
