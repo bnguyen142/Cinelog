@@ -5,6 +5,20 @@ Responses to the six review comments left by `@jamjamgobambam` on
 
 ---
 
+## AI Usage
+
+Used Claude (claude.ai) for two purposes during this project.
+
+First, codebase orientation. Starting from `app.py` and working through models, services, routes, and tests, I asked questions at each layer to confirm my understanding of how the entire codebase runs together — how the Flask factory wires up blueprints, what the SQLAlchemy relationships do in `models.py`, how the service layer separates business logic from routes, and how the test fixtures set up an isolated in-memory database. This gave me enough context to recognize the existing patterns (naming conventions, deduplication approach, test structure) before reading any of the review comments.
+
+Second, as a second reviewer to catch things I missed. For example, during the interactive rebase I accidentally put the new commit message as a comment (`#`) in the todo list instead of in the actual commit message editor — the commit appeared to succeed but the message didn't change. Using Claude as a reviewer caught this immediately when checking the git log, and I was able to redo the rebase correctly.
+
+AI was used to build understanding and catch mistakes — not to write code or generate the design decision responses.
+
+---
+
+---
+
 ## 1. Naming convention (`save_to_watchlist` → `add_to_watchlist`)
 
 > `save_to_watchlist()` should follow the project's naming convention. Compare
@@ -49,7 +63,7 @@ passes with no regressions. Full behavioral verification comes from the
 dedicated test in Comment 3 (`test_add_to_watchlist_duplicate_raises`), modeled
 on `test_add_to_collection_duplicate_raises` in `test_collection.py`.
 
-**Commit:** _TODO — commit as `fix: reject duplicate watchlist entries`_
+**Commit:** `fix: reject duplicate watchlist entries`
 
 ---
 
@@ -140,7 +154,7 @@ We're accepting that cost for now because:
    until users deliberately opt in, which is a much smaller dataset to build
    suggestion features on top of.
 
-**Commit:** _TODO — this is a docs-only change (PR description / pr-response.md), no code change needed since `public=True` was already the model's default._
+**Commit:** `docs: document default visibility decision for watchlist`
 
 ---
 
@@ -162,10 +176,10 @@ added `test_add_to_watchlist_creates_entry` (happy path) and
 `test_add_to_watchlist_duplicate_raises` (verifies Comment 2's fix), so the
 watchlist service now has the same three-test coverage as the collection service.
 
-Ran `pytest tests/test_watchlist.py -v` — all 3 pass. Ran the full suite,
-`pytest tests/ -v` — all 7 pass, confirming no regressions to `test_collection.py`.
+Ran `pytest tests/test_watchlist.py -v` — all 4 pass. Ran the full suite,
+`pytest tests/ -v` — all 8 pass, confirming no regressions to `test_collection.py`.
 
-**Commit:** _TODO — commit as `test: add watchlist tests for duplicate and nonexistent film cases`_
+**Commit:** `test: add watchlist tests for duplicate and nonexistent film cases`
 
 ---
 
@@ -183,6 +197,51 @@ Fixed by adding `WatchlistEntry` back to `models.py` with `film_id = db.Column(d
 **What conflicted:** `WatchlistEntry.film_id` was `db.Column(db.Integer, ...)` on the feature branch; main's refactor changed `Film.id` to `db.Column(db.String(36), ...)`. The resolution was updating `film_id` in `WatchlistEntry` to `String(36)` to match.
 
 **Commit:** `fix: restore WatchlistEntry model with UUID film_id after rebase`
+
+---
+
+## PR Description
+
+### Watchlist Feature
+
+Adds a watchlist to CineLog so users can save films they want to watch in the future, separate from their collection of films they've already seen. A user can add a film to their watchlist, view their full watchlist sorted by most recently added, and is prevented from adding the same film twice.
+
+**Endpoints added:**
+- `GET /watchlist/<user_id>` — returns the user's watchlist, newest first
+- `POST /watchlist/<user_id>/add` — adds a film; returns 409 if already on the watchlist, 404 if the film doesn't exist
+
+**Design decisions:**
+
+- **Default visibility: `public=True`** — CineLog is built around shared film discovery. The whole point of a watchlist in this context is to let others see what you want to watch and find common interests — without that, users would just use a private notes app. Defaulting to public means that social behavior happens naturally without requiring an extra opt-in step that most users would skip. The tradeoff is some users may self-censor, but that's the acceptable cost of optimizing for the platform's core purpose.
+
+- **Sort order: newest first** — Watchlists are append-only (no remove feature yet), so alphabetical order becomes less useful as a list grows. Newest-first keeps the top of the list relevant — recently added films are the ones the user is most actively thinking about.
+
+**How to test manually:**
+
+1. Start the app: `python app.py`
+2. In a separate terminal, add a film to a user's watchlist (replace UUIDs with real ones from your database):
+   ```bash
+   curl -X POST http://127.0.0.1:5000/watchlist/<user_id>/add \
+     -H "Content-Type: application/json" \
+     -d '{"film_id": "<film_uuid>"}'
+   ```
+   Expect: `201` with the entry JSON
+3. Add the same film again — expect `409`
+4. Add a nonexistent film ID — expect `404`
+5. View the watchlist:
+   ```bash
+   curl http://127.0.0.1:5000/watchlist/<user_id>
+   ```
+   Expect: list of films sorted newest-first
+6. Run the test suite: `pytest tests/ -v` — all 8 tests should pass
+
+---
+
+## Second Test (Stretch)
+
+Beyond the nonexistent `film_id` test required by Comment 3, I also wrote `test_get_watchlist_returns_newest_first` in `tests/test_watchlist.py`.
+
+I chose this case because sort order is a behavioral contract — if the order silently changes, callers will get results in the wrong sequence with no error to signal the problem. A test that asserts position explicitly (`titles[0] == "Blade Runner"`) catches that regression in a way that the happy-path tests don't. It also directly verifies the decision made in Comment 3, so the design choice has test coverage backing it up.
 
 ---
 
