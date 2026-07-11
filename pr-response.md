@@ -176,9 +176,13 @@ Ran `pytest tests/test_watchlist.py -v` — all 3 pass. Ran the full suite,
 > and update accordingly.
 
 **Response:**
-_TODO — fill in after rebasing._
+Ran `git fetch origin` then `git rebase origin/main`. Git reported a successful rebase with no textual conflicts — but a manual inspection of `models.py` afterward revealed a **silent semantic conflict**: the `WatchlistEntry` class was missing. The UUID refactor on `main` had changed `models.py` enough that when git replayed the original "added watchlist model and endpoint" commit, the `WatchlistEntry` class didn't apply cleanly. Because there was no direct line-by-line text clash, git didn't pause to ask for resolution — it just silently dropped the class. The `watchlist_entries` relationship on `Film` survived because it was added in a later separate commit.
 
-**Commit:** _TODO_
+Fixed by adding `WatchlistEntry` back to `models.py` with `film_id = db.Column(db.String(36), ...)` — updated from the original `Integer` to `String(36)` to match the UUID-based `Film.id` after the refactor. Ran `pytest tests/ -v` to confirm all 8 tests pass.
+
+**What conflicted:** `WatchlistEntry.film_id` was `db.Column(db.Integer, ...)` on the feature branch; main's refactor changed `Film.id` to `db.Column(db.String(36), ...)`. The resolution was updating `film_id` in `WatchlistEntry` to `String(36)` to match.
+
+**Commit:** `fix: restore WatchlistEntry model with UUID film_id after rebase`
 
 ---
 
