@@ -211,6 +211,7 @@ Adds a watchlist to CineLog so users can save films they want to watch in the fu
 **Endpoints added:**
 - `GET /watchlist/<user_id>` — returns the user's watchlist, newest first
 - `POST /watchlist/<user_id>/add` — adds a film; accepts optional `"public": false` to mark the entry private; returns 409 if already on the watchlist, 404 if the film doesn't exist
+- `DELETE /watchlist/<user_id>/remove` — removes a film from the watchlist; returns 404 if not on the watchlist
 
 **Design decisions:**
 
@@ -242,6 +243,12 @@ Adds a watchlist to CineLog so users can save films they want to watch in the fu
      -d '{"film_id": "<film_uuid>", "public": false}'
    ```
 7. Run the test suite: `pytest tests/ -v` — all 8 tests should pass
+
+---
+
+## remove_from_watchlist() (Stretch)
+
+Added `remove_from_watchlist(user_id, film_id)` to `services/watchlist_service.py`, following the same pattern as `remove_from_collection()`. It queries for an existing `WatchlistEntry` by `(user_id, film_id)`, raises `NotInWatchlistError` if not found, and deletes and commits if found. Added a `DELETE /watchlist/<user_id>/remove` endpoint in the route that catches `NotInWatchlistError` and returns 404. Two tests cover it: one confirms the entry is gone from the database after removal, one confirms that removing a film not on the watchlist raises `NotInWatchlistError`.
 
 ---
 
