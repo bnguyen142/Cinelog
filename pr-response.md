@@ -154,6 +154,8 @@ We're accepting that cost for now because:
    until users deliberately opt in, which is a much smaller dataset to build
    suggestion features on top of.
 
+As a stretch improvement, an optional `public` parameter was added to the `POST /watchlist/<user_id>/add` endpoint so callers can explicitly override the default per entry — giving users who want privacy an immediate opt-out without changing the default behavior for everyone else.
+
 **Commit:** `docs: document default visibility decision for watchlist`
 
 ---
@@ -208,7 +210,7 @@ Adds a watchlist to CineLog so users can save films they want to watch in the fu
 
 **Endpoints added:**
 - `GET /watchlist/<user_id>` — returns the user's watchlist, newest first
-- `POST /watchlist/<user_id>/add` — adds a film; returns 409 if already on the watchlist, 404 if the film doesn't exist
+- `POST /watchlist/<user_id>/add` — adds a film; accepts optional `"public": false` to mark the entry private; returns 409 if already on the watchlist, 404 if the film doesn't exist
 
 **Design decisions:**
 
@@ -233,7 +235,25 @@ Adds a watchlist to CineLog so users can save films they want to watch in the fu
    curl http://127.0.0.1:5000/watchlist/<user_id>
    ```
    Expect: list of films sorted newest-first
-6. Run the test suite: `pytest tests/ -v` — all 8 tests should pass
+6. Test the visibility toggle — add a film with `"public": false` and confirm the entry's `public` field is `false` in the response:
+   ```bash
+   curl -X POST http://127.0.0.1:5000/watchlist/<user_id>/add \
+     -H "Content-Type: application/json" \
+     -d '{"film_id": "<film_uuid>", "public": false}'
+   ```
+7. Run the test suite: `pytest tests/ -v` — all 8 tests should pass
+
+---
+
+## Visibility Toggle Endpoint (Stretch)
+
+Added an optional `public` parameter to `add_to_watchlist(user_id, film_id, public=True)` in `services/watchlist_service.py` and wired it through the `POST /watchlist/<user_id>/add` route. Callers can now set visibility explicitly:
+
+```json
+{ "film_id": "<uuid>", "public": false }
+```
+
+If `public` is omitted, it defaults to `True` — consistent with the decision documented in Comment 4. The parameter passes through `data.get("public", True)` in the route so omitting it behaves identically to the original endpoint.
 
 ---
 
