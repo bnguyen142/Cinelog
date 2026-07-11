@@ -5,6 +5,12 @@ Responses to the six review comments left by `@jamjamgobambam` on
 
 ---
 
+## Commit History Screenshot
+
+![git log --oneline](assets/git-log.png)
+
+---
+
 ## AI Usage
 
 Used Claude (claude.ai) for two purposes during this project.
