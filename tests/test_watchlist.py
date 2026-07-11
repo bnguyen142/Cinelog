@@ -129,3 +129,24 @@ def test_get_watchlist_returns_newest_first(app, sample_user):
         # Blade Runner was added later, so it should come first
         assert titles[0] == "Blade Runner"
         assert titles[1] == "Alien"
+
+
+# ── Visibility toggle ────────────────────────────────────────────────────────
+
+def test_add_to_watchlist_respects_public_flag(app, sample_user, sample_film):
+    """
+    add_to_watchlist() with public=False should create a private entry.
+    Omitting public should default to True.
+    """
+    with app.app_context():
+        private_entry = add_to_watchlist(user_id=sample_user, film_id=sample_film, public=False)
+        assert private_entry.public is False
+
+    # Add a second film without specifying public — should default to True
+    with app.app_context():
+        film_b = Film(title="Alien", year=1979, genre="Horror")
+        db.session.add(film_b)
+        db.session.commit()
+
+        public_entry = add_to_watchlist(user_id=sample_user, film_id=film_b.id)
+        assert public_entry.public is True
